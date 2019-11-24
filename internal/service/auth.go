@@ -16,11 +16,12 @@ const (
 
 // LoginOutput response
 type LoginOutput struct {
-	Token     string
-	ExpiresAt time.Time
-	AuthUser  User
+	Token     string    `json:"token,omitempty"`
+	ExpiresAt time.Time `json:"expires_at,omitempty"`
+	AuthUser  User      `json:"auth_user,omitempty"`
 }
 
+// Login login the user
 func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) {
 	var out LoginOutput
 

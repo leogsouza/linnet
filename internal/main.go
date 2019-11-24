@@ -32,9 +32,7 @@ func main() {
 		return
 	}
 
-	codec := branca.NewBranca("my-secret-string-key")
-
-	log.Println(codec)
+	codec := branca.NewBranca("4X0fO51378QfsPI48GHkysXfuqT1SzfF")
 
 	s := service.New(db, codec)
 
