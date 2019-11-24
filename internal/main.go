@@ -33,6 +33,7 @@ func main() {
 	}
 
 	codec := branca.NewBranca("4X0fO51378QfsPI48GHkysXfuqT1SzfF")
+	codec.SetTTL(uint32(service.TokenLifeSpan.Seconds()))
 
 	s := service.New(db, codec)
 
