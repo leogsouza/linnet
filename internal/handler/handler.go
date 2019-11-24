@@ -22,7 +22,9 @@ func New(s *service.Service) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.StripSlashes)
 	r.Route("/api", func(r chi.Router) {
+		r.Use(h.withAuth)
 		r.Post("/login", h.login)
+		r.Get("/auth_user", h.authUser)
 		r.Post("/users", h.createUser)
 
 	})
