@@ -1,7 +1,11 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
+
+	"github.com/go-chi/chi/middleware"
 
 	"github.com/go-chi/chi"
 
@@ -17,12 +21,23 @@ func New(s *service.Service) http.Handler {
 
 	h := &handler{s}
 
-	api := chi.NewRouter()
-	api.Post("/login", h.login)
-	api.Post("/users", h.createUser)
-
 	r := chi.NewRouter()
-	r.Handle("/api", api)
+	r.Use(middleware.StripSlashes)
+	r.Route("/api", func(r chi.Router) {
+		r.Post("/login", h.login)
+		r.Post("/users", h.createUser)
+
+	})
+
+	walkFunc := func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+		route = strings.Replace(route, "/*/", "/", -1)
+		fmt.Printf("%s %s\n", method, route)
+		return nil
+	}
+
+	if err := chi.Walk(r, walkFunc); err != nil {
+		fmt.Printf("Logging err: %s\n", err.Error())
+	}
 
 	return r
 }

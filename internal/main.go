@@ -2,13 +2,18 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"net/http"
 
+	"github.com/hako/branca"
+	_ "github.com/jackc/pgx/stdlib"
+	"github.com/leogsouza/linnet/internal/handler"
 	"github.com/leogsouza/linnet/internal/service"
 )
 
 const (
-	databaseURL = "postgresql://root@127.0.0.1:26257?sslmode=disable"
+	databaseURL = "postgresql://root@127.0.0.1:26257/linnet?sslmode=disable"
 	port        = 3000
 )
 
@@ -27,12 +32,18 @@ func main() {
 		return
 	}
 
-	codec := branca.newBranca("my-secret-string-key")
+	codec := branca.NewBranca("my-secret-string-key")
 
 	log.Println(codec)
 
-	s := service.Service{
-		DB:    db,
-		Codec: codec,
+	s := service.New(db, codec)
+
+	h := handler.New(s)
+	addr := fmt.Sprintf(":%d", port)
+
+	log.Printf("accepting connections on port %d", port)
+	if err = http.ListenAndServe(addr, h); err != nil {
+		log.Fatalf("could not start server: %v\n", err)
 	}
+
 }
