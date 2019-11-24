@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -22,6 +23,13 @@ type LoginOutput struct {
 
 func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) {
 	var out LoginOutput
+
+	email = strings.TrimSpace(email)
+
+	if !rxEmail.MatchString(email) {
+		return out, ErrInvalidEmail
+	}
+
 	query := "SELECT id, username FROM users where email = $1"
 	err := s.db.QueryRowContext(ctx, query, email).Scan(&out.AuthUser.ID, &out.AuthUser.Username)
 
@@ -30,12 +38,12 @@ func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) 
 	}
 
 	if err != nil {
-		return out, fmt.Errorf("could not query select user: %v\n", err)
+		return out, fmt.Errorf("could not query select user: %v", err)
 	}
 
 	out.Token, err = s.codec.EncodeToString(strconv.FormatInt(out.AuthUser.ID, 10))
 	if err != nil {
-		return out, fmt.Errorf("could not create token: %v\n", err)
+		return out, fmt.Errorf("could not create token: %v", err)
 	}
 
 	out.ExpiresAt = time.Now().Add(TokenLifeSpan)

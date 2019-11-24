@@ -22,6 +22,11 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 
 	out, err := h.Login(r.Context(), in.Email)
 
+	if err == service.ErrInvalidEmail {
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		return
+	}
+
 	if err == service.ErrUserNotFound {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
