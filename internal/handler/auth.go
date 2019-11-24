@@ -3,6 +3,8 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/leogsouza/linnet/internal/service"
 )
 
 type loginInput struct {
@@ -17,4 +19,18 @@ func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	out, err := h.Login(r.Context(), in.Email)
+
+	if err == service.ErrUserNotFound {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+
+	respond(w, out, http.StatusOK)
 }
