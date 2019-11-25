@@ -25,8 +25,14 @@ var (
 
 // User model
 type User struct {
-	ID       int64  `json:"id,omitempty"`
-	Username string `json:"username,omitempty"`
+	ID       int64  `json:"id"`
+	Username string `json:"username"`
+}
+
+// ToggleFollowOutput response
+type ToggleFollowOutput struct {
+	Following      bool `json:"following"`
+	FollowersCount int  `json:"followers_count"`
 }
 
 // CreateUser inserts an user in the database
@@ -60,4 +66,18 @@ func (s *Service) CreateUser(ctx context.Context, email, username string) error 
 	}
 
 	return nil
+}
+
+func (s *Service) TogggleFollow(ctx context.Context, username string) (ToggleFollowOutput, error) {
+	var out ToggleFollowOutput
+
+	followerID, ok := ctx.Value(KeyAuthUserID).(int64)
+
+	if !ok {
+		return out, ErrUnauthenticated
+	}
+
+	var followeeID int64
+
+	return out, nil
 }
