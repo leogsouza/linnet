@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  roach1:
+    volumes:
+      #- D:\docker\cockroach\data1:/cockroach/cockroach-data
+      - data-volume1:/cockroach/cockroach-data
+    image: cockroachdb/cockroach:v19.2.0
+    command: start --insecure
+    ports:
+      - 26257:26257
+      - 8080:8080
+    networks:
+      - roachnet
+  roach2:
+    volumes:
+      #- D:\docker\cockroach\data2:/cockroach/cockroach-data
+      - data-volume2:/cockroach/cockroach-data
+    image: cockroachdb/cockroach:v19.2.0
+    depends_on:
+      - roach1
+    command: start --insecure --join=roach1
+    networks:
+      - roachnet
+  roach3:
+    volumes:
+      #- D:\docker\cockroach\data3:/cockroach/cockroach-data
+      - data-volume3:/cockroach/cockroach-data
+    image: cockroachdb/cockroach:v19.2.0
+    depends_on:
+      - roach1
+    command: start --insecure --join=roach1
+    networks:
+      - roachnet
+networks:
+  roachnet:      
+volumes:
+  data-volume1:
+  data-volume2:
+  data-volume3:
