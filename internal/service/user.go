@@ -82,6 +82,30 @@ func (s *Service) CreateUser(ctx context.Context, email, username string) error 
 	return nil
 }
 
+// Users in ascending order with foward pagination and filtered by username.
+func (s *Service) Users(ctx context.Context, search string, first int, after string) ([]UserProfile, error) {
+	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	query := `
+		SELECT id, email, username, followers_count, followees_count
+		{{if .auth}}
+			, followers.follower_id IS NOT NULL as following
+			, followees.followee_id IS NOT NULL as followeed
+		{{end}}
+		FROM users
+		{{if .auth}}
+			LEFT JOIN follows AS followers ON followers.follower_id = @uid AND followers.followee_id = users.id
+			LEFT JOIN follows AS followees ON followees.follower_id = users.id AND followees.followee_id = @uid
+		{{end}}
+		{{if or .search .after}}WHERE{{end}}
+		{{if .search}}username ILIKE '%' || @search || '%'{{end}}
+		{{if and .search .after}}AND{{end}}
+		{{if .after}}username > @after{{end}}
+		ORDER BY username ASC
+	`
+
+	return nil, nil
+}
+
 // User selects the user from the database with the given username
 func (s *Service) User(ctx context.Context, username string) (UserProfile, error) {
 
