@@ -118,7 +118,7 @@ func (s *Service) ToggleFollow(ctx context.Context, username string) (ToggleFoll
 
 	if out.Following {
 		query = "DELETE FROM follows WHERE follower_id = $1 AND followee_id = $2"
-		if _, err = tx.ExecContext(ctx, query, followeeID); err != nil {
+		if _, err = tx.ExecContext(ctx, query, followerID, followeeID); err != nil {
 			return out, fmt.Errorf("could not delete follow: %v", err)
 		}
 
