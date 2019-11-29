@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 )
@@ -84,8 +85,11 @@ func (s *Service) CreateUser(ctx context.Context, email, username string) error 
 
 // Users in ascending order with foward pagination and filtered by username.
 func (s *Service) Users(ctx context.Context, search string, first int, after string) ([]UserProfile, error) {
+	search = strings.TrimSpace(search)
+	after = strings.TrimSpace(after)
+	first = normalizePage(first)
 	uid, auth := ctx.Value(KeyAuthUserID).(int64)
-	query := `
+	query, args, err := buildQuery(`
 		SELECT id, email, username, followers_count, followees_count
 		{{if .auth}}
 			, followers.follower_id IS NOT NULL as following
@@ -101,9 +105,54 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 		{{if and .search .after}}AND{{end}}
 		{{if .after}}username > @after{{end}}
 		ORDER BY username ASC
-	`
+		LIMIT @first`, map[string]interface{}{
+		"auth":   auth,
+		"uid":    uid,
+		"search": search,
+		"first":  first,
+		"after":  after,
+	})
 
-	return nil, nil
+	if err != nil {
+		return nil, fmt.Errorf("could not build users sql query: %v", err)
+	}
+
+	log.Printf("users query: %s\nargs: %v\n", query, args)
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+
+	if err != nil {
+		return nil, fmt.Errorf("could not query select users: %v", err)
+	}
+
+	defer rows.Close()
+	uu := make([]UserProfile, 0, first)
+	for rows.Next() {
+		var u UserProfile
+		dest := []interface{}{&u.ID, &u.Email, &u.Username, &u.FollowersCount, &u.FolloweesCount}
+
+		if auth {
+			dest = append(dest, &u.Following, &u.Followeed)
+		}
+
+		if err = rows.Scan(dest...); err != nil {
+			return nil, fmt.Errorf("could not scan user: %v", err)
+		}
+
+		u.Me = auth && uid == u.ID
+		if !u.Me {
+			u.ID = 0
+			u.Email = ""
+		}
+
+		uu = append(uu, u)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("could not iterate user rows: %v", err)
+	}
+
+	return uu, nil
 }
 
 // User selects the user from the database with the given username

@@ -9,6 +9,12 @@ import (
 	"github.com/jackc/pgx"
 )
 
+const (
+	minPageSize     = 1
+	defaultPageSize = 10
+	maxPageSize     = 10
+)
+
 var queriesCache = make(map[string]*template.Template)
 
 func isUniqueViolation(err error) bool {
@@ -29,7 +35,7 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 	}
 
 	var wr bytes.Buffer
-	if err := t.Execute(wr, data); err != nil {
+	if err := t.Execute(&wr, data); err != nil {
 		return "", nil, fmt.Errorf("could not apply sql query data: %v", err)
 	}
 
@@ -45,4 +51,20 @@ func buildQuery(text string, data map[string]interface{}) (string, []interface{}
 	}
 
 	return query, args, nil
+}
+
+func normalizePage(i int) int {
+	if i == 0 {
+		return defaultPageSize
+	}
+
+	if i < minPageSize {
+		return minPageSize
+	}
+
+	if i > maxPageSize {
+		return maxPageSize
+	}
+
+	return i
 }
