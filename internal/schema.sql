@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE TABLE IF NOT EXISTS follows (
-  follower_id INT NOT NULL,
-  followee_id INT NOT NULL,
+  follower_id INT NOT NULL REFERENCES users,
+  followee_id INT NOT NULL REFERENCES users,
   PRIMARY KEY (follower_id, followee_id)
 );
 
