@@ -1,18 +1,34 @@
 package service
 
 import (
+	"image/jpeg"
+	"image/png"
+	"os"
+	"path"
+
+	"github.com/disintegration/imaging"
+	gonanoid "github.com/matoous/go-nanoid"
+
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
+	"image"
+	"io"
 	"log"
 	"regexp"
 	"strings"
 )
 
+const MaxAvatarBytes = 5 << 20 // 5MB
+
 var (
 	rxEmail    = regexp.MustCompile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")
 	rxUsername = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]{0,17}$")
+	avatarsDir = path.Join("web", "static", "img", "avatars")
+)
+
+var (
 	// ErrUserNotFound used when the user wasn't found on the db.
 	ErrUserNotFound = errors.New("user not found")
 	// ErrInvalidEmail used when the email is invalid.
@@ -25,12 +41,15 @@ var (
 	ErrUsernameTaken = errors.New("username already exists")
 	// ErrForbiddenFollow used when you try to follow yourself
 	ErrForbiddenFollow = errors.New("cannot follow yourself")
+	// ErrUnsupportedAvatarFormat
+	ErrUnsupportedAvatarFormat = errors.New("only png and jpeg allowed as avatar")
 )
 
 // User model
 type User struct {
-	ID       int64  `json:"id,omitempty"`
-	Username string `json:"username"`
+	ID        int64   `json:"id,omitempty"`
+	Username  string  `json:"username"`
+	AvatarURL *string `json:"avatar_url"`
 }
 
 // UserProfile model
@@ -200,6 +219,73 @@ func (s *Service) User(ctx context.Context, username string) (UserProfile, error
 	}
 
 	return u, nil
+
+}
+
+// UpdateAvatar updates the avatar of an authenticated user
+func (s *Service) UpdateAvatar(ctx context.Context, r io.Reader) (string, error) {
+	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	if !ok {
+		return "", ErrUnauthenticated
+	}
+	r = io.LimitReader(r, MaxAvatarBytes)
+	img, format, err := image.Decode(r)
+	if err != nil {
+		return "", fmt.Errorf("could not read avatar: %v", err)
+	}
+
+	if format != "png" && format != "jepg" {
+		return "", ErrUnsupportedAvatarFormat
+	}
+
+	avatar, err := gonanoid.Nanoid()
+	if err != nil {
+		return "", fmt.Errorf("could not generate avatar filename: %v", err)
+	}
+
+	if format == "png" {
+		avatar += ".png"
+	} else {
+		avatar += ".jpg"
+	}
+
+	err = createDirectory(avatarsDir)
+	if err != nil {
+		return "", fmt.Errorf("could not create avatar directory: %v", err)
+	}
+
+	avatarPath := path.Join(avatarsDir, avatar)
+	f, err := os.Create(avatarPath)
+	if err != nil {
+		return "", fmt.Errorf("could not create avatar file: %v", err)
+	}
+
+	defer f.Close()
+	img = imaging.Fill(img, 400, 400, imaging.Center, imaging.CatmullRom)
+	if format == "png" {
+		err = png.Encode(f, img)
+	} else {
+		err = jpeg.Encode(f, img, nil)
+	}
+
+	if err != nil {
+		return "", fmt.Errorf("could not write avatar to disk: %v", err)
+	}
+
+	var oldAvatar sql.NullString
+	if err = s.db.QueryRowContext(ctx, `
+		UPDATE users SET avatar = $1 WHERE id = $2
+		RETURNING (SELECT avatar FROM users WHERE id = $2) AS old_avatar
+	`, avatar, uid).Scan(&oldAvatar); err != nil {
+		defer os.Remove(avatarPath)
+		return "", fmt.Errorf("could not update avatar: %v", err)
+	}
+
+	if oldAvatar.Valid {
+		defer os.Remove(path.Join(avatarsDir, oldAvatar.String))
+	}
+
+	return s.origin + "/img/avatars/" + avatar, nil
 
 }
 

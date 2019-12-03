@@ -3,6 +3,7 @@ package service
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strings"
 	"text/template"
 
@@ -67,4 +68,8 @@ func normalizePage(i int) int {
 	}
 
 	return i
+}
+
+func createDirectory(dirName string) error {
+	return os.MkdirAll(dirName, 0755)
 }
