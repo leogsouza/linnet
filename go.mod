@@ -8,6 +8,7 @@ require (
 	github.com/go-chi/chi v4.0.2+incompatible
 	github.com/hako/branca v0.0.0-20180808000428-10b799466ada
 	github.com/jackc/pgx v3.6.0+incompatible
+	github.com/joho/godotenv v1.3.0
 	github.com/matoous/go-nanoid v1.1.0
 	github.com/pkg/errors v0.8.1 // indirect
 	golang.org/x/crypto v0.0.0-20191122220453-ac88ee75c92c // indirect

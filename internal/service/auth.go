@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -41,15 +42,21 @@ func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) 
 		return out, ErrInvalidEmail
 	}
 
-	query := "SELECT id, username FROM users where email = $1"
-	err := s.db.QueryRowContext(ctx, query, email).Scan(&out.AuthUser.ID, &out.AuthUser.Username)
-
+	var avatar sql.NullString
+	query := "SELECT id, username, avatar FROM users where email = $1"
+	err := s.db.QueryRowContext(ctx, query, email).Scan(&out.AuthUser.ID, &out.AuthUser.Username, &avatar)
+	log.Println(&out)
 	if err == sql.ErrNoRows {
 		return out, ErrUserNotFound
 	}
 
 	if err != nil {
 		return out, fmt.Errorf("could not query select user: %v", err)
+	}
+
+	if avatar.Valid {
+		avatarURL := s.origin + "/img/avatars/" + avatar.String
+		out.AuthUser.AvatarURL = &avatarURL
 	}
 
 	out.Token, err = s.codec.EncodeToString(strconv.FormatInt(out.AuthUser.ID, 10))
@@ -87,8 +94,9 @@ func (s *Service) AuthUser(ctx context.Context) (User, error) {
 		return u, ErrUnauthenticated
 	}
 
-	query := "SELECT username FROM users where id = $1"
-	err := s.db.QueryRowContext(ctx, query, uid).Scan(&u.Username)
+	var avatar sql.NullString
+	query := "SELECT username,avatar FROM users where id = $1"
+	err := s.db.QueryRowContext(ctx, query, uid).Scan(&u.Username, &avatar)
 	if err == sql.ErrNoRows {
 		return u, ErrUserNotFound
 	}
@@ -98,6 +106,10 @@ func (s *Service) AuthUser(ctx context.Context) (User, error) {
 	}
 
 	u.ID = uid
+	if avatar.Valid {
+		avatarURL := s.origin + "/img/avatars/" + avatar.String
+		u.AvatarURL = &avatarURL
+	}
 
 	return u, nil
 }

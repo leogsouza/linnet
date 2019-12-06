@@ -8,9 +8,17 @@ import (
 
 	"github.com/hako/branca"
 	_ "github.com/jackc/pgx/stdlib"
+	"github.com/joho/godotenv"
 	"github.com/leogsouza/linnet/internal/handler"
 	"github.com/leogsouza/linnet/internal/service"
 )
+
+func init() {
+	// loads values from .env into the system
+	if err := godotenv.Load(); err != nil {
+		log.Print("No .env file found")
+	}
+}
 
 func main() {
 

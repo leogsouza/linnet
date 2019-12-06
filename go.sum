@@ -8,6 +8,8 @@ github.com/hako/branca v0.0.0-20180808000428-10b799466ada h1:RjbRG4Xq2N5UaUUL9/v
 github.com/hako/branca v0.0.0-20180808000428-10b799466ada/go.mod h1:tOPn4gvKEUWqIJNE+zpTeTALaRAXnrRqqSnPlO3VpEo=
 github.com/jackc/pgx v3.6.0+incompatible h1:bJeo4JdVbDAW8KB2m8XkFeo8CPipREoG37BwEoKGz+Q=
 github.com/jackc/pgx v3.6.0+incompatible/go.mod h1:0ZGrqGqkRlliWnWB4zKnWtjbSWbGkVEFm4TeybAXq+I=
+github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
+github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/matoous/go-nanoid v1.1.0 h1:B4BSMxTVgYrCHqtovL/adb8GFkE4mPCNntOOrdZLeCk=
 github.com/matoous/go-nanoid v1.1.0/go.mod h1:L+uFUqrYwDgNWu5R02GrSxxcqX7ghiFuKPlKEOZ90GE=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
