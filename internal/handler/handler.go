@@ -32,6 +32,7 @@ func New(s *service.Service) http.Handler {
 		r.Post("/users/{username}/toggle_follow", h.toggleFollow)
 		r.Get("/users/{username}/followers", h.followers)
 		r.Get("/users/{username}/followees", h.followees)
+		r.Post("/posts", h.createPost)
 
 	})
 
