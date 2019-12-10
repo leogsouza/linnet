@@ -187,7 +187,7 @@ func (s *Service) userByID(ctx context.Context, id int64) (User, error) {
 	var u User
 	var avatar sql.NullString
 	query := "SELECT username,avatar FROM users where id = $1"
-	err := s.db.QueryRowContext(ctx, query, uid).Scan(&u.Username, &avatar)
+	err := s.db.QueryRowContext(ctx, query, id).Scan(&u.Username, &avatar)
 	if err == sql.ErrNoRows {
 		return u, ErrUserNotFound
 	}

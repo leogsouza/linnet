@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -45,7 +44,6 @@ func (s *Service) Login(ctx context.Context, email string) (LoginOutput, error) 
 	var avatar sql.NullString
 	query := "SELECT id, username, avatar FROM users where email = $1"
 	err := s.db.QueryRowContext(ctx, query, email).Scan(&out.AuthUser.ID, &out.AuthUser.Username, &avatar)
-	log.Println(&out)
 	if err == sql.ErrNoRows {
 		return out, ErrUserNotFound
 	}

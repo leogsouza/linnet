@@ -82,8 +82,12 @@ func (s *Service) CreatePost(
 	ti.UserID = uid
 	ti.PostID = ti.Post.ID
 
+	if err = tx.Commit(); err != nil {
+		return ti, fmt.Errorf("could not commit to create post: %v", err)
+	}
+
 	go func(p Post) {
-		u, err := s.userByID(ctx.Background(), p.UserID)
+		u, err := s.userByID(context.Background(), p.UserID)
 		if err != nil {
 			log.Printf("could not get post user: %v\n", err)
 			return
