@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/cockroachdb"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/hako/branca"
 	_ "github.com/jackc/pgx/stdlib"
 	"github.com/joho/godotenv"
@@ -23,11 +26,18 @@ func init() {
 func main() {
 
 	var (
-		port        = env("PORT", "3000")
-		origin      = env("ORIGIN", "http://localhost:"+port)
-		databaseURL = env("DATABASE_URL", "postgresql://root@127.0.0.1:26257/linnet?sslmode=disable")
-		brancaKey   = env("BRANCA_KEY", "")
+		port           = env("PORT", "3000")
+		origin         = env("ORIGIN", "http://localhost:"+port)
+		databaseURL    = env("DATABASE_URL", "postgres://root@127.0.0.1:26257/linnet?sslmode=disable")
+		dbURLMigration = env("DATABASE_URL", "cockroachdb://root@127.0.0.1:26257/linnet?sslmode=disable")
+		brancaKey      = env("BRANCA_KEY", "")
 	)
+
+	err := dbMigration(dbURLMigration)
+	if err != nil {
+		log.Fatalf("could not proecess the db migration: %v\n", err)
+		return
+	}
 
 	db, err := sql.Open("pgx", databaseURL)
 
@@ -64,4 +74,22 @@ func env(key, fallbackValue string) string {
 	}
 
 	return s
+}
+
+func dbMigration(databaseURL string) error {
+	m, err := migrate.New(
+		"file://db/migrations",
+		databaseURL)
+	log.Println("Initiation migration")
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	log.Println("Executing migration")
+	if err := m.Up(); err != nil {
+		log.Fatal(err)
+		return err
+	}
+	return nil
 }

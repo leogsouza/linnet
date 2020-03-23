@@ -1,8 +1,3 @@
-DROP DATABASE IF EXISTS linnet CASCADE;
-CREATE DATABASE IF NOT EXISTS linnet;
-SET DATABASE = linnet;
-
-
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL NOT NULL PRIMARY KEY,
   email VARCHAR NOT NULL UNIQUE,
@@ -24,7 +19,7 @@ CREATE TABLE IF NOT EXISTS posts (
   content VARCHAR NOT NULL,
   spoiler_of VARCHAR,
   nsfw BOOLEAN NOT NULL,
-  likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >= 0)
+  likes_count INT NOT NULL DEFAULT 0 CHECK (likes_count >= 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
