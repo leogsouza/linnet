@@ -33,8 +33,8 @@ type Post struct {
 }
 
 type ToggleLikeOutput struct {
-	Liked      bool `json:"liked,omitempty"`
-	LikesCount int  `json:"likes_count,omitempty"`
+	Liked      bool `json:"liked"`
+	LikesCount int  `json:"likes_count"`
 }
 
 // CreatePost publishes a post to the user timeline and fan-ous it to his followers
@@ -188,7 +188,6 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int64) (ToggleLikeO
 	} else {
 		query = "INSERT INTO post_likes (user_id, post_id) VALUES ($1, $2)"
 		_, err = tx.ExecContext(ctx, query, uid, postID)
-
 		if isForeignKeyViolation(err) {
 			return out, ErrPostNotFound
 		}
@@ -208,6 +207,5 @@ func (s *Service) TogglePostLike(ctx context.Context, postID int64) (ToggleLikeO
 	}
 
 	out.Liked = !out.Liked
-
 	return out, nil
 }

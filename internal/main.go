@@ -87,7 +87,7 @@ func dbMigration(databaseURL string) error {
 	}
 
 	log.Println("Executing migration")
-	if err := m.Up(); err != nil {
+	if err := m.Up(); err!= nil &&  err != migrate.ErrNoChange {
 		log.Fatal(err)
 		return err
 	}

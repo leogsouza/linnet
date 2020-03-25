@@ -138,8 +138,6 @@ func (s *Service) Users(ctx context.Context, search string, first int, after str
 		return nil, fmt.Errorf("could not build users sql query: %v", err)
 	}
 
-	log.Printf("users query: %s\nargs: %v\n", query, args)
-
 	rows, err := s.db.QueryContext(ctx, query, args...)
 
 	if err != nil {
