@@ -42,3 +42,9 @@ CREATE TABLE IF NOT EXISTS post_likes (
 INSERT INTO users (id, email, username) VALUES
   (1, 'test@test.com', 'Test'),
   (2, 'john@doe.com', 'John');
+
+INSERT INTO posts (id, user_id, content) VALUES
+  (1, 1, 'sample post');
+
+INSERT INTO timeline (id, user_id, post_id) VALUES
+  (1, 1, 1);
