@@ -27,6 +27,7 @@ func New(s *service.Service) http.Handler {
 		r.Get("/auth_user", h.authUser)
 		r.Post("/users", h.createUser)
 		r.Get("/users", h.users)
+		r.Get("/timeline", h.timeline)
 		r.Get("/users/{username}", h.user)
 		r.Put("/auth_user/avatar", h.updateAvatar)
 		r.Post("/users/{username}/toggle_follow", h.toggleFollow)
