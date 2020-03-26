@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -280,4 +281,61 @@ func (s *Service) Posts(
 	}
 
 	return pp, nil
+}
+
+func (s *Service) Post(ctx context.Context, postID int64) (Post, error) {
+	var p Post
+
+	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	query, args, err := buildQuery(`
+		SELECT posts.id, content, spoiler_of, nsfw, likes_count, created_at
+		, users.username, users.avatar
+		{{if .auth}}
+			, posts.user_id = @uid AS mine
+			, likes.user_id IS NOT NULL AS liked
+		{{end}}
+		FROM posts
+		INNER JOIN users ON posts.user_id = users.id
+		{{if .auth}}
+			LEFT JOIN post_likes as likes
+				ON likes.user_id = @uid AND likes.post_id = posts.id
+		{{end}}
+		WHERE posts.id = @post_id
+	`, map[string]interface{}{
+		"auth":    auth,
+		"uid":     uid,
+		"post_id": postID,
+	})
+
+	if err != nil {
+		{
+			return p, fmt.Errorf("could not build post sql query: %v", err)
+		}
+	}
+
+	var u User
+	var avatar sql.NullString
+	dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CreatedAt,
+		&u.Username, &avatar}
+	if auth {
+		dest = append(dest, &p.Mine, &p.Liked)
+	}
+
+	err = s.db.QueryRowContext(ctx, query, args...).Scan(dest...)
+	if err == sql.ErrNoRows {
+		return p, ErrPostNotFound
+	}
+
+	if err != nil {
+		return p, fmt.Errorf("could not query select post: %v", err)
+	}
+
+	if avatar.Valid {
+		avatarURL := s.origin + "/img/avatars/" + avatar.String
+		u.AvatarURL = &avatarURL
+	}
+
+	p.User = &u
+
+	return p, nil
 }

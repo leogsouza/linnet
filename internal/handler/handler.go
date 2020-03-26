@@ -35,6 +35,7 @@ func New(s *service.Service) http.Handler {
 		r.Post("/posts", h.createPost)
 		r.Get("/users/{username}/posts", h.posts)
 		r.Post("/posts/{postID}/toggle_like", h.togglePostLike)
+		r.Get("/posts/{postID}", h.post)
 
 	})
 
