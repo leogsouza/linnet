@@ -19,7 +19,7 @@ type Comment struct {
 	Liked      bool      `json:"liked"`
 }
 
-func (s *Service) CreateComment(ctx context.Context, postID int64, comment string) (Comment, error) {
+func (s *Service) CreateComment(ctx context.Context, postID int64, content string) (Comment, error) {
 	var c Comment
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
@@ -39,7 +39,7 @@ func (s *Service) CreateComment(ctx context.Context, postID int64, comment strin
 	defer tx.Rollback()
 
 	query := `
-		INSERT INTO comment(user_id, postid, content) VALUES($1, $2, $3)
+		INSERT INTO comments(user_id, post_id, content) VALUES($1, $2, $3)
 		RETURNING id, created_at`
 	err = tx.QueryRowContext(ctx, query, uid, postID, content).Scan(&c.ID, &c.CreatedAt)
 	if isForeignKeyViolation(err) {
@@ -55,13 +55,13 @@ func (s *Service) CreateComment(ctx context.Context, postID int64, comment strin
 	c.Content = content
 	c.Mine = true
 
-	if err = tx.Commit(); err != nil {
-		return c, fmt.Errorf("could not commit to create comment: %v", err)
-	}
-
 	query = "UPDATE posts SET comments_count = comments_count + 1 WHERE id = $1"
 	if _, err = tx.ExecContext(ctx, query, postID); err != nil {
 		return c, fmt.Errorf("could not update and increment post comments count: %v", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return c, fmt.Errorf("could not commit to create comment: %v", err)
 	}
 
 	return c, nil

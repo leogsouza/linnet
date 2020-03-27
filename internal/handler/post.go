@@ -45,7 +45,7 @@ func (h *handler) createPost(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) togglePostLike(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	postID, _ := strconv.ParseInt(chi.URLParamFromCtx(ctx, "postID"), 10, 64)
+	postID, _ := strconv.ParseInt(chi.URLParamFromCtx(ctx, "post_id"), 10, 64)
 	out, err := h.TogglePostLike(ctx, postID)
 	if err == service.ErrUnauthenticated {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -86,7 +86,7 @@ func (h *handler) posts(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) post(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	postID, _ := strconv.ParseInt(chi.URLParamFromCtx(ctx, "postID"), 10, 64)
+	postID, _ := strconv.ParseInt(chi.URLParamFromCtx(ctx, "post_id"), 10, 64)
 	p, err := h.Post(ctx, postID)
 	if err == service.ErrPostNotFound {
 		http.Error(w, err.Error(), http.StatusNotFound)
