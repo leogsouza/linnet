@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -65,4 +66,73 @@ func (s *Service) CreateComment(ctx context.Context, postID int64, content strin
 	}
 
 	return c, nil
+}
+
+// Comments from a post in descending order with backward pagination
+func (s *Service) Comments(ctx context.Context, postID int64, last int, before int64) ([]Comment, error) {
+	uid, auth := ctx.Value(KeyAuthUserID).(int64)
+	last = normalizePage(last)
+	query, args, err := buildQuery(`
+		SELECT comments.id, content, likes_count, created_at, username, avatar
+		{{if .auth}}
+		, comments.user_id = @uid AS mine
+		, likes.user_id IS NOT NULL AS liked
+		{{end}}
+		FROM comments
+		INNER JOIN users ON comments.user_id = users.id		
+		{{if .auth}}
+		LEFT JOIN comment_likes AS likes
+			ON likes.comment_id = comments.id AND likes.user_id = @uid
+		{{end}}
+		WHERE comments.post_id = @post_id
+		{{if .before}}AND comments.id < @before{{end}}
+		ORDER BY created_at DESC
+		LIMIT @last`, map[string]interface{}{
+		"auth":    auth,
+		"uid":     uid,
+		"post_id": postID,
+		"before":  before,
+		"last":    last,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("could not build comments sql query; %v", err)
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("could not query select comments: %v", err)
+	}
+
+	defer rows.Close()
+
+	cc := make([]Comment, 0, last)
+	for rows.Next() {
+		var c Comment
+		var u User
+		var avatar sql.NullString
+
+		dest := []interface{}{&c.ID, &c.Content, &c.LikesCount, &c.CreatedAt, &u.Username, &avatar}
+
+		if auth {
+			dest = append(dest, &c.Mine, &c.Liked)
+		}
+
+		if err = rows.Scan(dest...); err != nil {
+			return nil, fmt.Errorf("could not scan comment: %v", err)
+		}
+
+		if avatar.Valid {
+			avatarURL := s.origin + "/img/avatars/" + avatar.String
+			u.AvatarURL = &avatarURL
+		}
+		c.User = &u
+		cc = append(cc, c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("could not iterate comment rows: %v", err)
+	}
+
+	return cc, nil
 }

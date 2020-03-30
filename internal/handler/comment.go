@@ -49,3 +49,18 @@ func (h *handler) createComment(w http.ResponseWriter, r *http.Request) {
 
 	respond(w, c, http.StatusOK)
 }
+
+func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	q := r.URL.Query()
+	postID, _ := strconv.ParseInt(chi.URLParamFromCtx(ctx, "post_id"), 10, 64)
+	last, _ := strconv.Atoi(q.Get("last"))
+	before, _ := strconv.ParseInt(q.Get("before"), 10, 64)
+	cc, err := h.Comments(ctx, postID, last, before)
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+
+	respond(w, cc, http.StatusOK)
+}
