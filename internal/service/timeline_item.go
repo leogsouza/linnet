@@ -14,6 +14,7 @@ type TimelineItem struct {
 	Post   Post  `json:"post"`
 }
 
+// Timeline retrieves the user's timeline
 func (s *Service) Timeline(
 	ctx context.Context,
 	last int,

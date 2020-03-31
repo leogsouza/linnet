@@ -3,11 +3,16 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 )
 
+// ErrCommentNotFound denotes that the comment was not found
+var ErrCommentNotFound = errors.New("comment not found")
+
+// Comment represents the comment on database
 type Comment struct {
 	ID         int64     `json:"id"`
 	UserID     int64     `json:"-"`
@@ -20,6 +25,7 @@ type Comment struct {
 	Liked      bool      `json:"liked"`
 }
 
+// CreateComment creates a comment
 func (s *Service) CreateComment(ctx context.Context, postID int64, content string) (Comment, error) {
 	var c Comment
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
@@ -135,4 +141,64 @@ func (s *Service) Comments(ctx context.Context, postID int64, last int, before i
 	}
 
 	return cc, nil
+}
+
+// ToggleCommentLike -
+func (s *Service) ToggleCommentLike(ctx context.Context, commentID int64) (ToggleLikeOutput, error) {
+	var out ToggleLikeOutput
+	uid, ok := ctx.Value(KeyAuthUserID).(int64)
+	if !ok {
+		return out, ErrUnauthenticated
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return out, fmt.Errorf("could not begin tx: %v", err)
+	}
+
+	defer tx.Rollback()
+
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM comment_likes WHERE user_id = $1 AND comment_id= $2
+		)`
+
+	if err := tx.QueryRowContext(ctx, query, uid, commentID).Scan(&out.Liked); err != nil {
+		return out, fmt.Errorf("could not query select comment like existence: %v", err)
+	}
+
+	if out.Liked {
+		query = "DELETE FROM comment_likes WHERE user_id = $1 AND comment_id = $2"
+		if _, err = tx.ExecContext(ctx, query, uid, commentID); err != nil {
+			return out, fmt.Errorf("could not delete comment like: %v", err)
+		}
+
+		query = "UPDATE comments SET likes_count = likes_count - 1 WHERE id = $1 RETURNING likes_count"
+		if err = tx.QueryRowContext(ctx, query, commentID).Scan(&out.LikesCount); err != nil {
+			return out, fmt.Errorf("could not update and decrement comment likes count: %v", err)
+		}
+
+	} else {
+		query = "INSERT INTO comment_likes (user_id, comment_id) VALUES ($1, $2)"
+		_, err = tx.ExecContext(ctx, query, uid, commentID)
+		if isForeignKeyViolation(err) {
+			return out, ErrCommentNotFound
+		}
+		if err != nil {
+			return out, fmt.Errorf("cound not insert comment like: %v", err)
+		}
+
+		query = "UPDATE comments SET likes_count = likes_count + 1 WHERE id = $1 RETURNING likes_count"
+		if err = tx.QueryRowContext(ctx, query, commentID).Scan(&out.LikesCount); err != nil {
+			return out, fmt.Errorf("could not update and increment comment likes count: %v", err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return out, fmt.Errorf("could not commit to toggle comment like: %v", err)
+	}
+
+	out.Liked = !out.Liked
+
+	return out, nil
 }

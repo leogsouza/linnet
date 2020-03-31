@@ -64,3 +64,25 @@ func (h *handler) comments(w http.ResponseWriter, r *http.Request) {
 
 	respond(w, cc, http.StatusOK)
 }
+
+func (h *handler) toggleCommentLike(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	commentID, _ := strconv.ParseInt(chi.URLParamFromCtx(ctx, "post_id"), 10, 64)
+	out, err := h.ToggleCommentLike(ctx, commentID)
+	if err == service.ErrUnauthenticated {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if err == service.ErrCommentNotFound {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	if err != nil {
+		respondError(w, err)
+		return
+	}
+
+	respond(w, out, http.StatusOK)
+}

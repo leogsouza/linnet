@@ -35,6 +35,7 @@ type Post struct {
 	Liked      bool      `json:"liked"`
 }
 
+// ToggleLikeOutput represents the output for toggle like
 type ToggleLikeOutput struct {
 	Liked      bool `json:"liked"`
 	LikesCount int  `json:"likes_count"`
@@ -153,7 +154,7 @@ func (s *Service) fanoutPost(p Post) ([]TimelineItem, error) {
 	return tt, nil
 }
 
-// TogglePostLike
+// TogglePostLike toggles the post like
 func (s *Service) TogglePostLike(ctx context.Context, postID int64) (ToggleLikeOutput, error) {
 	var out ToggleLikeOutput
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
@@ -283,6 +284,7 @@ func (s *Service) Posts(
 	return pp, nil
 }
 
+// Post retrieves the post from a postID
 func (s *Service) Post(ctx context.Context, postID int64) (Post, error) {
 	var p Post
 
