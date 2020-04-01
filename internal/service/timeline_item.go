@@ -27,7 +27,7 @@ func (s *Service) Timeline(
 
 	last = normalizePage(last)
 	query, args, err := buildQuery(`
-		SELECT timeline.id,posts.id, content, spoiler_of, nsfw, likes_count, created_at
+		SELECT timeline.id,posts.id, content, spoiler_of, nsfw, likes_count, comments_count, created_at
 		, posts.user_id = @uid AS mine
 		, likes.user_id IS NOT NULL AS liked
 		, users.username, users.avatar
@@ -69,6 +69,7 @@ func (s *Service) Timeline(
 			&ti.Post.SpoilerOf,
 			&ti.Post.NSFW,
 			&ti.Post.LikesCount,
+			&ti.Post.CommentsCount,
 			&ti.Post.CreatedAt,
 			&ti.Post.Mine,
 			&ti.Post.Liked,

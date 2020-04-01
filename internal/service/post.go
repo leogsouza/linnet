@@ -23,16 +23,17 @@ var (
 
 // Post Model
 type Post struct {
-	ID         int64     `json:"id"`
-	UserID     int64     `json:"-"`
-	Content    string    `json:"content"`
-	SpoilerOf  *string   `json:"spoiler_of"`
-	NSFW       bool      `json:"nsfw"`
-	LikesCount int       `json:"likesCount"`
-	CreatedAt  time.Time `json:"created_at"`
-	User       *User     `json:"user,omitempty"`
-	Mine       bool      `json:"mine"`
-	Liked      bool      `json:"liked"`
+	ID            int64     `json:"id"`
+	UserID        int64     `json:"-"`
+	Content       string    `json:"content"`
+	SpoilerOf     *string   `json:"spoiler_of"`
+	NSFW          bool      `json:"nsfw"`
+	LikesCount    int       `json:"likes_count"`
+	CommentsCount int       `json:"comments_count"`
+	CreatedAt     time.Time `json:"created_at"`
+	User          *User     `json:"user,omitempty"`
+	Mine          bool      `json:"mine"`
+	Liked         bool      `json:"liked"`
 }
 
 // ToggleLikeOutput represents the output for toggle like
@@ -229,7 +230,7 @@ func (s *Service) Posts(
 	uid, auth := ctx.Value(KeyAuthUserID).(int64)
 	last = normalizePage(last)
 	query, args, err := buildQuery(`
-		SELECT id, content, spoiler_of, nsfw, likes_count, created_at
+		SELECT id, content, spoiler_of, nsfw, likes_count, comments_count, created_at
 		{{if .auth}}
 			, posts.user_id = @uid AS mine
 			, likes.user_id IS NOT NULL AS liked
@@ -265,7 +266,7 @@ func (s *Service) Posts(
 	pp := make([]Post, 0, last)
 	for rows.Next() {
 		var p Post
-		dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CreatedAt}
+		dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CommentsCount, &p.CreatedAt}
 		if auth {
 			dest = append(dest, &p.Mine, &p.Liked)
 		}
@@ -290,7 +291,7 @@ func (s *Service) Post(ctx context.Context, postID int64) (Post, error) {
 
 	uid, auth := ctx.Value(KeyAuthUserID).(int64)
 	query, args, err := buildQuery(`
-		SELECT posts.id, content, spoiler_of, nsfw, likes_count, created_at
+		SELECT posts.id, content, spoiler_of, nsfw, likes_count, comments_count, created_at
 		, users.username, users.avatar
 		{{if .auth}}
 			, posts.user_id = @uid AS mine
@@ -317,7 +318,7 @@ func (s *Service) Post(ctx context.Context, postID int64) (Post, error) {
 
 	var u User
 	var avatar sql.NullString
-	dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CreatedAt,
+	dest := []interface{}{&p.ID, &p.Content, &p.SpoilerOf, &p.NSFW, &p.LikesCount, &p.CommentsCount, &p.CreatedAt,
 		&u.Username, &avatar}
 	if auth {
 		dest = append(dest, &p.Mine, &p.Liked)
