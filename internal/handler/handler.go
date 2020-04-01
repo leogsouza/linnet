@@ -39,7 +39,7 @@ func New(s *service.Service) http.Handler {
 		r.Get("/posts/{post_id}", h.post)
 		r.Post("/posts/{post_id}/comments", h.createComment)
 		r.Get("/posts/{post_id}/comments", h.comments)
-		r.Get("/comments/{comment_id/toggle_like", h.toggleCommentLike)
+		r.Get("/comments/{comment_id}/toggle_like", h.toggleCommentLike)
 
 	})
 
