@@ -10,6 +10,7 @@ require (
 	github.com/hako/branca v0.0.0-20180808000428-10b799466ada
 	github.com/jackc/pgx v3.6.0+incompatible
 	github.com/joho/godotenv v1.3.0
+	github.com/lib/pq v1.3.0
 	github.com/matoous/go-nanoid v1.1.0
 	github.com/sanity-io/litter v1.2.0
 )

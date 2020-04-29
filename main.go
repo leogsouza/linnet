@@ -10,10 +10,10 @@ import (
 	"github.com/golang-migrate/migrate/v4/database/cockroachdb"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/hako/branca"
-	_ "github.com/jackc/pgx/stdlib"
 	"github.com/joho/godotenv"
 	"github.com/leogsouza/linnet/internal/handler"
 	"github.com/leogsouza/linnet/internal/service"
+	_ "github.com/lib/pq"
 )
 
 func init() {
@@ -32,7 +32,7 @@ func main() {
 		brancaKey   = env("BRANCA_KEY", "")
 	)
 
-	db, err := sql.Open("pgx", databaseURL)
+	db, err := sql.Open("postgres", databaseURL)
 
 	if err != nil {
 		log.Fatalf("could not open db connection: %v\n", err)
