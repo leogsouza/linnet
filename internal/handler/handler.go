@@ -42,7 +42,7 @@ func New(s *service.Service) http.Handler {
 		r.Get("/comments/{comment_id}/toggle_like", h.toggleCommentLike)
 		r.Get("/notifications", h.notifications)
 		r.Post("/notifications/{notification_id}/mark_as_read", h.markNotificationAsRead)
-		r.Post("/mark_as_read", h.markNotificationsAsRead)
+		r.Post("/mark_notifications_as_read", h.markNotificationsAsRead)
 	})
 
 	return r

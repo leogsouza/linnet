@@ -30,7 +30,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 	last = normalizePage(last)
 	query, args, err := buildQuery(`
 		SELECT id, actors, type, read, issued_at
-		FROM notifictions
+		FROM notifications
 		WHERE user_id = @uid
 		{{if .before}}AND id < @before{{end}}
 		ORDER BY issued_at DESC
@@ -70,7 +70,7 @@ func (s *Service) Notifications(ctx context.Context, last int, before int64) ([]
 	return nn, nil
 }
 
-// MarkNotificationAsRead sets all notifications from the authenticated user as read
+// MarkNotificationsAsRead sets all notifications from the authenticated user as read
 func (s *Service) MarkNotificationsAsRead(ctx context.Context) error {
 	uid, ok := ctx.Value(KeyAuthUserID).(int64)
 	if !ok {
@@ -124,6 +124,7 @@ func (s *Service) notifyFollow(followerID, followeeID int64) {
 			AND $2:::VARCHAR = ANY(actors)
 			AND type = 'follow'
 	)`
+
 	if err = tx.QueryRow(query, followeeID, actor).Scan(&notified); err != nil {
 		log.Printf("could not query select follow notification existence: %v\n", err)
 		return
@@ -136,6 +137,7 @@ func (s *Service) notifyFollow(followerID, followeeID int64) {
 	var nid int64
 	query = "SELECT id FROM notifications WHERE user_id = $1 AND type = 'follow' AND read = false"
 	err = tx.QueryRow(query, followeeID).Scan(&nid)
+
 	if err != nil && err != sql.ErrNoRows {
 		log.Printf("could not query select unread follow notification: %v\n", err)
 		return
@@ -159,7 +161,7 @@ func (s *Service) notifyFollow(followerID, followeeID int64) {
 	} else {
 		query = `
 			UPDATE notifications SET
-				actors = array_prepent($1, notifications.actors),
+				actors = array_prepend($1, notifications.actors),
 				issued_at = now()
 			WHERE id = $2
 			RETURNING actors, issued_at`
@@ -167,17 +169,16 @@ func (s *Service) notifyFollow(followerID, followeeID int64) {
 			log.Printf("could not update follow notification: %v\n", err)
 			return
 		}
-
 		n.ID = nid
-		n.UserID = followeeID
-		n.Type = "follow"
-
-		if err = tx.Commit(); err != nil {
-			log.Printf("could not commit to notify follow: %v\n", err)
-			return
-		}
-
-		// TODO broadcast follow notification
-
 	}
+
+	n.UserID = followeeID
+	n.Type = "follow"
+
+	if err = tx.Commit(); err != nil {
+		log.Printf("could not commit to notify follow: %v\n", err)
+		return
+	}
+
+	// TODO broadcast follow notification
 }
