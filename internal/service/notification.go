@@ -212,7 +212,7 @@ func (s *Service) notifyComment(c Comment) {
 	nn := make([]Notification, 0)
 	for rows.Next() {
 		var n Notification
-		if err = rows.Scan(&n.ID, pq.Array(&n.Actors), &n.IssuedAt); err != nil {
+		if err = rows.Scan(&n.ID, &n.UserID, pq.Array(&n.Actors), &n.IssuedAt); err != nil {
 			log.Printf("could not scan comment notification: %v\n", err)
 			return
 		}
