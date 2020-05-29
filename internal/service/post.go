@@ -34,6 +34,7 @@ type Post struct {
 	User          *User     `json:"user,omitempty"`
 	Mine          bool      `json:"mine"`
 	Liked         bool      `json:"liked"`
+	Subscribed    bool      `json:"subscribed"`
 }
 
 // ToggleLikeOutput represents the output for toggle like
@@ -86,6 +87,12 @@ func (s *Service) CreatePost(
 	ti.Post.NSFW = nsfw
 	ti.Post.Mine = true
 
+	query = "INSERT INTO post_subscriptions(user_id, post_id) VALUES($1, $2)"
+	if _, err = tx.ExecContext(ctx, query, uid, ti.Post.ID); err != nil {
+		return ti, fmt.Errorf("could not insert post subscription: %v", err)
+	}
+	ti.Post.Subscribed = true
+
 	query = "INSERT INTO timeline (user_id, post_id) VALUES ($1, $2) RETURNING id"
 	if err = tx.QueryRowContext(ctx, query, uid, ti.Post.ID).Scan(&ti.ID); err != nil {
 		return ti, fmt.Errorf("could not insert timeline item: %v", err)
@@ -107,6 +114,7 @@ func (s *Service) CreatePost(
 
 		p.User = &u
 		p.Mine = false
+		p.Subscribed = false
 
 		tt, err := s.fanoutPost(p)
 		if err != nil {

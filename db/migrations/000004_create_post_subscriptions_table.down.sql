@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS post_subscriptions CASCADE;
+
+ALTER TABLE IF EXISTS notifications DROP COLUMN IF EXISTS post_id CASCADE;
